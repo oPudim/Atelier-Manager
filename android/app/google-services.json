@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "709043431139",
+    "firebase_url": "https://atelier-manager-763ee-default-rtdb.firebaseio.com",
+    "project_id": "atelier-manager-763ee",
+    "storage_bucket": "atelier-manager-763ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:709043431139:android:fbe1c12fedbbc4a83187d6",
+        "android_client_info": {
+          "package_name": "com.dangosatelier.atelier_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyveiad26i3XLyCVboZc5WmlPX1z2fiBo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
