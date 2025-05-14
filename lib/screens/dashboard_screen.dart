@@ -1,12 +1,8 @@
-import 'package:atelier_manager/widgets/main_drawer.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
-import 'setting_screen.dart';
 import 'products_screen.dart';
-import 'prints_screen.dart';
-import 'finalization_screen.dart';
-import 'sales_screen.dart';
+import 'print_screen.dart';
+import 'finish_screen.dart';
+import 'out_flow_screen.dart';
 import 'events_screen.dart';
 import 'home_screen.dart';
 
@@ -18,14 +14,14 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 4;
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     ProductsScreen(),
     PrintsScreen(),
     FinalizationScreen(),
-    SalesScreen(),
+    OutFlowScreen(),
     EventsScreen(),
   ];
 
@@ -48,8 +44,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       label: 'Finalização',
     ),
     BottomNavigationBarItem(
-      icon: Icon(Icons.attach_money),
-      label: 'Vendas',
+      icon: Icon(Icons.receipt_long),
+      label: 'Saidas',
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.event),
@@ -63,26 +59,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      // Navegar de volta para a tela de login
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    } catch (e) {
-      // Tratar erros, se houver
-      print('Erro ao fazer logout: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Obtendo informações do usuário
-    final user = FirebaseAuth.instance.currentUser;
-    final displayName = user?.displayName ?? 'Usuário';
-    final email = user?.email ?? 'Email não disponível';
 
     return Scaffold(
       body: Center(
@@ -96,6 +74,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
       ),
+      //floatingActionButton: FloatingActionButton( //Comente aqui para testar
+      //  onPressed: () {}, //Comente aqui para testar
+      //  child: const Icon(Icons.add), //Comente aqui para testar
+      //), //Comente aqui para testar
     );
   }
 }
