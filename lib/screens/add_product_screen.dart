@@ -57,6 +57,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _imageUrl = _imageUrlController.text;
 
       Product newProduct = Product(
+        id: '',
         imageUrl: _imageUrl,
         code: _codeController.text,
         name: _nameController.text,
@@ -68,11 +69,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
         recommended: int.parse(_recommendedController.text),
       );
 
-      // Use o 'code' como o ID do documento
       await FirebaseFirestore.instance
           .collection('products')
-          .doc(_codeController.text) // Definindo o ID do documento
-          .set(newProduct.toMap()); // Usando set para garantir que o documento seja criado ou sobrescrito
+          .doc(_codeController.text)
+          .set(newProduct.toMap());
       Navigator.pop(context);
     }
   }

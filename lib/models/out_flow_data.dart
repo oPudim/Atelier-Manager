@@ -26,7 +26,6 @@ class Event {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'imageUrl': imageUrl,
       'place': place,
@@ -39,16 +38,16 @@ class Event {
     };
   }
 
-  factory Event.fromMap(Map<String, dynamic> map) {
+  factory Event.fromMap(Map<String, dynamic> map, String id) {
     return Event(
-      id: map['id'] as String,
+      id: id,
       name: map['name'] as String,
       imageUrl: map['imageUrl'] as String,
       place: map['place'] as String,
       startDate: DateTime.parse(map['startDate'] as String),
       endDate: DateTime.parse(map['endDate'] as String),
       paid: map['paid'] as bool,
-      outFlows: (map['outFlows'] as List<dynamic>?)?.map((outFlow) => OutFlow.fromMap(outFlow as Map<String, dynamic>)).toList(),
+      outFlows: (map['outFlows'] as List<dynamic>?)?.map((outFlow) => OutFlow.fromMap(outFlow as Map<String, dynamic>, 'ID')).toList(),
       expenses: (map['expenses'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as double)),
       observations: map['observations'] as String?,
     );
@@ -89,7 +88,7 @@ class Customer {
       address: map['address'] as String?,
       cep: map['cep'] as String?,
       observations: map['observations'] as String?,
-      outFlows: (map['outFlows'] as List<dynamic>?)?.map((outFlow) => OutFlow.fromMap(outFlow as Map<String, dynamic>)).toList() ?? [],
+      outFlows: (map['outFlows'] as List<dynamic>?)?.map((outFlow) => OutFlow.fromMap(outFlow as Map<String, dynamic>, 'ID')).toList() ?? [],
     );
   }
 
@@ -110,12 +109,14 @@ class Customer {
 
 // 1. Transações de entrada
 abstract class OutFlow {
+  final String id;
   final DateTime dateTime;
   final Map<String, int> products;
   final Map<String, double> prices;
   final bool isSale;
 
   OutFlow({
+    required this.id,
     required this.dateTime,
     required this.products,
     required this.prices,
@@ -126,21 +127,21 @@ abstract class OutFlow {
 
   Map<String, dynamic> toMap();
 
-  static OutFlow fromMap(Map<String, dynamic> map) {
+  static OutFlow fromMap(Map<String, dynamic> map, String id) {
     final type = map['type'] as String;
     switch (type) {
       case 'event':
-        return EventOutFlow.fromMap(map);
+        return EventOutFlow.fromMap(map, id);
       case 'order':
-        return OrderOutFlow.fromMap(map);
+        return OrderOutFlow.fromMap(map, id);
       case 'marketplace':
-        return MarketplaceOutFlow.fromMap(map);
+        return MarketplaceOutFlow.fromMap(map, id);
       case 'loss':
-        return LossOutFlow.fromMap(map);
+        return LossOutFlow.fromMap(map, id);
       case 'gift':
-        return GiftOutFlow.fromMap(map);
+        return GiftOutFlow.fromMap(map, id);
       case 'barter':
-        return BarterOutFlow.fromMap(map);
+        return BarterOutFlow.fromMap(map, id);
       default:
         throw ArgumentError('Tipo de transação desconhecido: $type');
     }
@@ -150,6 +151,14 @@ abstract class OutFlow {
   String toString() {
     return 'TransactionOutFlow(dateTime: $dateTime, products: $products, type: $type)';
   }
+
+  double get totalValue {
+    double total = 0.0;
+    products.forEach((code, amount) {
+      total += (amount * prices[code]!);
+    });
+    return total;
+  }
 }
 
 // 2.1. Evento
@@ -157,11 +166,12 @@ class EventOutFlow extends OutFlow {
   final String eventId;
 
   EventOutFlow({
+    required String id,
     required DateTime dateTime,
     required Map<String, int> products,
     required Map<String, double> prices,
     required this.eventId,
-  }) : super(dateTime: dateTime, products: products, prices: prices, isSale: true);
+  }) : super(id: id, dateTime: dateTime, products: products, prices: prices, isSale: true);
 
   @override
   String get type => 'event';
@@ -177,8 +187,9 @@ class EventOutFlow extends OutFlow {
     };
   }
 
-  factory EventOutFlow.fromMap(Map<String, dynamic> map) {
+  factory EventOutFlow.fromMap(Map<String, dynamic> map, String id) {
     return EventOutFlow(
+      id: id,
       dateTime: DateTime.parse(map['dateTime'] as String),
       products: Map<String, int>.from(map['products']),
       prices: Map<String, double>.from(map['prices']),
@@ -192,11 +203,12 @@ class OrderOutFlow extends OutFlow {
   final String customerId;
 
   OrderOutFlow({
+    required String id,
     required DateTime dateTime,
     required Map<String, int> products,
     required Map<String, double> prices,
     required this.customerId,
-  }) : super(dateTime: dateTime, products: products, prices: prices, isSale: true);
+  }) : super(id: id, dateTime: dateTime, products: products, prices: prices, isSale: true);
 
   @override
   String get type => 'order';
@@ -212,8 +224,9 @@ class OrderOutFlow extends OutFlow {
     };
   }
 
-  factory OrderOutFlow.fromMap(Map<String, dynamic> map) {
+  factory OrderOutFlow.fromMap(Map<String, dynamic> map, String id) {
     return OrderOutFlow(
+      id: id,
       dateTime: DateTime.parse(map['dateTime'] as String),
       products: Map<String, int>.from(map['products']),
       prices: Map<String, double>.from(map['prices']),
@@ -228,12 +241,13 @@ class MarketplaceOutFlow extends OutFlow {
   final String transactionId;
 
   MarketplaceOutFlow({
+    required String id,
     required DateTime dateTime,
     required Map<String, int> products,
     required Map<String, double> prices,
     required this.platform,
     required this.transactionId,
-  }) : super(dateTime: dateTime, products: products, prices: prices, isSale: true);
+  }) : super(id: id, dateTime: dateTime, products: products, prices: prices, isSale: true);
 
   @override
   String get type => 'marketplace';
@@ -250,8 +264,9 @@ class MarketplaceOutFlow extends OutFlow {
     };
   }
 
-  factory MarketplaceOutFlow.fromMap(Map<String, dynamic> map) {
+  factory MarketplaceOutFlow.fromMap(Map<String, dynamic> map, String id) {
     return MarketplaceOutFlow(
+      id: id,
       dateTime: DateTime.parse(map['dateTime'] as String),
       products: Map<String, int>.from(map['products']),
       prices: Map<String, double>.from(map['prices']),
@@ -282,6 +297,15 @@ extension LossStageExtension on LossStage {
         throw ArgumentError('Valor inválido para LossStage: $value');
     }
   }
+
+  String label() {
+    switch (this) {
+      case LossStage.printed:
+        return 'Impresso';
+      case LossStage.finished:
+        return 'Finalizado';
+    }
+  }
 }
 
 class LossOutFlow extends OutFlow {
@@ -290,13 +314,14 @@ class LossOutFlow extends OutFlow {
   final String? responsible;
 
   LossOutFlow({
+    required String id,
     required DateTime dateTime,
     required Map<String, int> products,
     required Map<String, double> prices,
     required this.reason,
     required this.stage,
     this.responsible,
-  }) : super(dateTime: dateTime, products: products, prices: prices, isSale: false);
+  }) : super(id: id, dateTime: dateTime, products: products, prices: prices, isSale: false);
 
   @override
   String get type => 'loss';
@@ -314,8 +339,9 @@ class LossOutFlow extends OutFlow {
     };
   }
 
-  factory LossOutFlow.fromMap(Map<String, dynamic> map) {
+  factory LossOutFlow.fromMap(Map<String, dynamic> map, String id) {
     return LossOutFlow(
+      id: id,
       dateTime: DateTime.parse(map['dateTime'] as String),
       products: Map<String, int>.from(map['products']),
       prices: Map<String, double>.from(map['prices']),
@@ -332,12 +358,13 @@ class GiftOutFlow extends OutFlow {
   final String? occasion;
 
   GiftOutFlow({
+    required String id,
     required DateTime dateTime,
     required Map<String, int> products,
     required Map<String, double> prices,
     required this.recipientId,
     this.occasion,
-  }) : super(dateTime: dateTime, products: products, prices: prices, isSale: false);
+  }) : super(id: id, dateTime: dateTime, products: products, prices: prices, isSale: false);
 
   @override
   String get type => 'gift';
@@ -354,8 +381,9 @@ class GiftOutFlow extends OutFlow {
     };
   }
 
-  factory GiftOutFlow.fromMap(Map<String, dynamic> map) {
+  factory GiftOutFlow.fromMap(Map<String, dynamic> map, String id) {
     return GiftOutFlow(
+      id: id,
       dateTime: DateTime.parse(map['dateTime'] as String),
       products: Map<String, int>.from(map['products']),
       prices: Map<String, double>.from(map['prices']),
@@ -371,12 +399,13 @@ class BarterOutFlow extends OutFlow {
   final Map<String, double> itemsReceived;
 
   BarterOutFlow({
+    required String id,
     required DateTime dateTime,
     required Map<String, int> products,
     required Map<String, double> prices,
     required this.partner,
     required this.itemsReceived,
-  }) : super(dateTime: dateTime, products: products, prices: prices, isSale: false);
+  }) : super(id: id, dateTime: dateTime, products: products, prices: prices, isSale: false);
 
   @override
   String get type => 'barter';
@@ -393,8 +422,9 @@ class BarterOutFlow extends OutFlow {
     };
   }
 
-  factory BarterOutFlow.fromMap(Map<String, dynamic> map) {
+  factory BarterOutFlow.fromMap(Map<String, dynamic> map, String id) {
     return BarterOutFlow(
+      id: id,
       dateTime: DateTime.parse(map['dateTime'] as String),
       products: Map<String, int>.from(map['products']),
       prices: Map<String, double>.from(map['prices']),

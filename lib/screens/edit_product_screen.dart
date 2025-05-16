@@ -69,6 +69,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     if (_formKey.currentState!.validate()) {
       // Atualize o produto com os novos valores
       Product updatedProduct = Product(
+        id: widget.product.id,
         imageUrl: _imageUrlController.text,
         code: _codeController.text,
         name: _nameController.text,

@@ -33,7 +33,8 @@ class ProductProvider with ChangeNotifier {
         .collection('products')
         .snapshots()
         .listen((snapshot) {
-      _products = snapshot.docs.map((doc) => Product.fromMap(doc.data())).toList();
+      _products = snapshot.docs.map((doc) => Product.fromMap(doc.data(), doc.id)).toList()
+        ..sort((a, b) => a.code.compareTo(b.code));
       calculateProductsInfo();
     });
     FirebaseFirestore.instance
@@ -41,7 +42,8 @@ class ProductProvider with ChangeNotifier {
         .snapshots()
         .listen((snapshot) {
       _printFiles =
-          snapshot.docs.map((doc) => PrintFile.fromMap(doc.data())).toList();
+          snapshot.docs.map((doc) => PrintFile.fromMap(doc.data(), doc.id)).toList()
+            ..sort((a, b) => a.fileDateTime.compareTo(b.fileDateTime));
       calculateProductsInfo();
     });
     FirebaseFirestore.instance
@@ -49,28 +51,32 @@ class ProductProvider with ChangeNotifier {
         .snapshots()
         .listen((snapshot) {
       _finisheds =
-          snapshot.docs.map((doc) => Finished.fromMap(doc.data())).toList();
+          snapshot.docs.map((doc) => Finished.fromMap(doc.data(), doc.id)).toList()
+            ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
       calculateProductsInfo();
     });
     FirebaseFirestore.instance
         .collection('events')
         .snapshots()
         .listen((snapshot) {
-      _events = snapshot.docs.map((doc) => Event.fromMap(doc.data())).toList();
+      _events = snapshot.docs.map((doc) => Event.fromMap(doc.data(), doc.id)).toList()
+        ..sort((a, b) => a.startDate.compareTo(b.startDate));
       calculateProductsInfo();
     });
     FirebaseFirestore.instance
         .collection('customers')
         .snapshots()
         .listen((snapshot) {
-      _customers = snapshot.docs.map((doc) => Customer.fromMap(doc.data())).toList();
+      _customers = snapshot.docs.map((doc) => Customer.fromMap(doc.data())).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
       calculateProductsInfo();
     });
     FirebaseFirestore.instance
         .collection('outFlows')
         .snapshots()
         .listen((snapshot) {
-      _outFlows = snapshot.docs.map((doc) => OutFlow.fromMap(doc.data())).toList();
+      _outFlows = snapshot.docs.map((doc) => OutFlow.fromMap(doc.data(), doc.id)).toList()
+        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
       calculateProductsInfo();
     });
     calculateProductsInfo();
@@ -80,11 +86,20 @@ class ProductProvider with ChangeNotifier {
     return _products.firstWhere((product) => product.code == code);
   }
 
+  Event findByEventId(String eventId) {
+    return _events.firstWhere((event) => event.id == eventId);
+  }
+
   Future<void> calculateProductsInfo () async {
     _products.forEach((product) {
       int totalOnFile = 0;
       int totalPrinted = 0;
       int totalFinished = 0;
+      int totalOutFlow = 0;
+      int totalSales = 0;
+      double totalEarnings = 0.0;
+      double totalEarningsThisMonth = 0.0;
+      double totalEarningsThisYear = 0.0;
 
       _printFiles.forEach((printFile) {
         if (printFile.isPrinted) {
@@ -97,16 +112,37 @@ class ProductProvider with ChangeNotifier {
           }
         }
       });
-
       _finisheds.forEach((finished) {
         if (finished.products.containsKey(product.code)) {
           totalFinished += finished.products[product.code]!;
           totalPrinted -= finished.products[product.code]!;
         }
       });
+      _outFlows.forEach((outFlow) {
+        if (outFlow.products.containsKey(product.code)) {
+          totalOutFlow += outFlow.products[product.code]!;
+          totalFinished -= outFlow.products[product.code]!;
+          if (outFlow.isSale) {
+            totalSales += outFlow.products[product.code]!;
+            totalEarnings += outFlow.products[product.code]! * outFlow.prices[product.code]!;
+            if (outFlow.dateTime.year == DateTime.now().year) {
+              totalEarningsThisYear += outFlow.products[product.code]! * outFlow.prices[product.code]!;
+              if (outFlow.dateTime.month == DateTime.now().month) {
+                totalEarningsThisMonth += outFlow.products[product.code]! * outFlow.prices[product.code]!;
+              }
+            }
+          }
+        }
+      });
+
       product.numOnFiles = totalOnFile;
       product.numPrinteds = totalPrinted;
       product.numFinisheds = totalFinished;
+      product.numOutflows = totalOutFlow;
+      product.numSales = totalSales;
+      product.earnings = totalEarnings;
+      product.earningsThisMonth = totalEarningsThisMonth;
+      product.earningsThisYear = totalEarningsThisYear;
       product.prevision = product.numOnFiles + product.numPrinteds + product.numFinisheds;
       product.order = product.prevision < product.recommended ? product.recommended - product.prevision : 0;
     });
@@ -119,29 +155,22 @@ class ProductProvider with ChangeNotifier {
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //PrintFiles functions
-  Future<void> refreshPrintFiles() async {
-    _printFiles = await FirebaseFirestore.instance.collection('printFiles')
-        .get().then((snapshot) => snapshot.docs.map((doc) => PrintFile.fromMap(doc.data())).toList());
-    calculateProductsInfo();
-    notifyListeners();
-  }
 
   Future<void> savePrint(PrintFile printFile) async {
     await FirebaseFirestore.instance.collection('printFiles')
-        .doc(printFile.fileDateTime.toIso8601String().substring(0,23))
-        .set(printFile.toMap());
+        .add(printFile.toMap());
   }
 
   Future<void> updatePrint(PrintFile printFile) async {
     print(printFile.fileDateTime.toIso8601String().substring(0,23));
     await FirebaseFirestore.instance.collection('printFiles')
-        .doc(printFile.fileDateTime.toIso8601String().substring(0,23))
+        .doc(printFile.id)
         .update(printFile.toMap());
   }
 
   Future<void> deletePrint(PrintFile printFile) async {
     await FirebaseFirestore.instance.collection('printFiles')
-        .doc(printFile.fileDateTime.toIso8601String().substring(0,23))
+        .doc(printFile.id)
         .delete();
   }
 
@@ -152,8 +181,7 @@ class ProductProvider with ChangeNotifier {
     try {
       await FirebaseFirestore.instance
           .collection('events')
-          .doc(event.id)
-          .set(event.toMap());
+          .add(event.toMap());
       print('Evento salvo com sucesso: ${event.name}');
     } catch (e) {
       print('Erro ao salvar evento: $e');
@@ -187,6 +215,47 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //OutFlows functions
+
+  Future<void> saveOutFlow(OutFlow outFlow) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('outFlows')
+          .add(outFlow.toMap());
+      print('Saída salva com sucesso: ${outFlow.type}');
+    } catch (e) {
+      print('Erro ao salvar saída: $e');
+      throw e;
+    }
+  }
+
+  Future<void> updateOutFlow(OutFlow outFlow) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('outFlows')
+          .doc(outFlow.id)
+          .update(outFlow.toMap());
+      print('Saída atualizada com sucesso: ${outFlow.type}');
+    } catch (e) {
+      print('Erro ao atualizar saída: $e');
+      throw e;
+    }
+  }
+
+  Future<void> deleteOutFlow(OutFlow outFlow) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('outFlows')
+          .doc(outFlow.id)
+          .delete();
+      print('Saída excluída com sucesso: ${outFlow.type}');
+    } catch (e) {
+      print('Erro ao excluir saída: $e');
+      throw e;
+    }
+  }
+
   Future<int> addPrints(List<PrintFile> _printFiles,
       {required Function(double) onProgress}) async {
     final totalPrintFiles = _printFiles.length;
@@ -194,7 +263,7 @@ class ProductProvider with ChangeNotifier {
     final batch = FirebaseFirestore.instance.batch();
     final collection = FirebaseFirestore.instance.collection('printFiles');
     for (final _printFile in _printFiles) {
-      final docRef = collection.doc(_printFile.fileDateTime.toIso8601String().substring(0,23));
+      final docRef = collection.doc();
       batch.set(docRef, _printFile.toMap());
       itemsAdded++;
       onProgress(itemsAdded / totalPrintFiles);
@@ -211,7 +280,7 @@ class ProductProvider with ChangeNotifier {
     final jsonString = await file.readAsString();
     final jsonData = json.decode(jsonString) as List;
     final List<PrintFile> _printFiles = jsonData
-        .map((item) => PrintFile.fromMap(item))
+        .map((item) => PrintFile.fromMap(item, ''))
         .toList();
     return _printFiles;
   }
@@ -221,19 +290,18 @@ class ProductProvider with ChangeNotifier {
 
   Future<void> saveFinished(Finished finished) async {
     await FirebaseFirestore.instance.collection('finisheds')
-        .doc(finished.dateTime.toIso8601String().substring(0,23))
-        .set(finished.toMap());
+        .add(finished.toMap());
   }
 
   Future<void> updateFinished(Finished finished) async {
     await FirebaseFirestore.instance.collection('finisheds')
-        .doc(finished.dateTime.toIso8601String().substring(0,23))
+        .doc(finished.id)
         .update(finished.toMap());
   }
 
   Future<void> deleteFinished(Finished finished) async {
     await FirebaseFirestore.instance.collection('finisheds')
-        .doc(finished.dateTime.toIso8601String().substring(0,23))
+        .doc(finished.id)
         .delete();
   }
 
@@ -244,7 +312,7 @@ class ProductProvider with ChangeNotifier {
     final batch = FirebaseFirestore.instance.batch();
     final collection = FirebaseFirestore.instance.collection('finisheds');
     for (final _finished in _finisheds) {
-      final docRef = collection.doc(_finished.dateTime.toIso8601String().substring(0,23));
+      final docRef = collection.doc();
       batch.set(docRef, _finished.toMap());
       itemsAdded++;
       onProgress(itemsAdded / totalFinisheds);
@@ -261,7 +329,7 @@ class ProductProvider with ChangeNotifier {
     final jsonString = await file.readAsString();
     final jsonData = json.decode(jsonString) as List;
     final List<Finished> _finisheds = jsonData
-        .map((item) => Finished.fromMap(item))
+        .map((item) => Finished.fromMap(item, ''))
         .toList();
     return _finisheds;
   }
@@ -274,7 +342,7 @@ class ProductProvider with ChangeNotifier {
     final batch = FirebaseFirestore.instance.batch();
     final collection = FirebaseFirestore.instance.collection('products');
     for (final _product in _products) {
-      final docRef = collection.doc(_product.code);
+      final docRef = collection.doc();
       batch.set(docRef, _product.toMap());
       itemsAdded++;
       onProgress(itemsAdded / totalItems);
@@ -291,7 +359,7 @@ class ProductProvider with ChangeNotifier {
     final jsonString = await file.readAsString();
     final jsonData = json.decode(jsonString) as List;
     final List<Product> _products = jsonData
-        .map((item) => Product.fromMap(item))
+        .map((item) => Product.fromMap(item, ''))
         .toList();
     return _products;
   }

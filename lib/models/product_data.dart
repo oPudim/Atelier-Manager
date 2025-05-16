@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'out_flow_data.dart';
 
 class Product {
+  final String id;
   final String imageUrl;
-  final String code; // Agora o 'code' é o identificador principal
+  final String code;
   final String name;
   final String studio;
   final double scale;
@@ -14,15 +15,18 @@ class Product {
 
   int numOnFiles = 0;
   int numPrinteds = 0;
-  late int numFinisheds;
-  late int numOutflows;
-  late int numSales;
-  late double earnings;
+  int numFinisheds = 0;
+  int numOutflows = 0;
+  int numSales = 0;
+  double earnings = 0.0;
+  double earningsThisMonth = 0.0;
+  double earningsThisYear = 0.0;
 
   int prevision = 0;
   int order = 0;
 
   Product({
+    required this.id,
     required this.imageUrl,
     required this.code,
     required this.name,
@@ -32,9 +36,7 @@ class Product {
     required this.material,
     required this.sellingPrice,
     required this.recommended,
-  }) {
-
-  }
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -50,13 +52,14 @@ class Product {
     };
   }
 
-  factory Product.fromMap(Map<String, dynamic> map) {
+  factory Product.fromMap(Map<String, dynamic> map, String id) {
     return Product(
+      id: id,
       imageUrl: map['imageUrl'] ?? '',
       code: map['code'] ?? '',
       name: map['name'] ?? '',
       studio: map['studio'] ?? '',
-      scale: (map['scale'] as num?)?.toDouble() ?? -1.0,
+      scale: (map['scale']).toDouble() ?? -1.0,
       type: map['type'] ?? '',
       material: map['material'] ?? '',
       sellingPrice: (map['sellingPrice'] as num?)?.toDouble() ?? -1.0,
@@ -66,10 +69,12 @@ class Product {
 }
 
 class Finished {
+  final String id;
   final DateTime dateTime;
   final Map<String, int> products;
 
   Finished({
+    required this.id,
     required this.dateTime,
     required this.products,
   });
@@ -81,7 +86,7 @@ class Finished {
     };
   }
 
-  factory Finished.fromMap(Map<String, dynamic> map) {
+  factory Finished.fromMap(Map<String, dynamic> map, String id) {
     DateTime _DateTime;
     final _DateTimeValue = map['dateTime'];
 
@@ -99,6 +104,7 @@ class Finished {
       _DateTime = DateTime.now();
     }
     return Finished(
+      id: id,
       dateTime: _DateTime,
       products: (map['products'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as int)) ?? {},
     );
@@ -106,6 +112,7 @@ class Finished {
 }
 
 class PrintFile {
+  final String id;
   final DateTime fileDateTime;
   final DateTime printDateTime;
   final String fileName;
@@ -115,6 +122,7 @@ class PrintFile {
   late bool isPrinted;
 
   PrintFile({
+    required this.id,
     required this.fileDateTime,
     required this.printDateTime,
     required this.fileName,
@@ -136,7 +144,7 @@ class PrintFile {
     };
   }
 
-  factory PrintFile.fromMap(Map<String, dynamic> map) {
+  factory PrintFile.fromMap(Map<String, dynamic> map, String id) {
     DateTime fileDateTime;
     final fileDateTimeValue = map['fileDateTime'];
 
@@ -176,6 +184,7 @@ class PrintFile {
     }
 
     return PrintFile(
+      id: id,
       fileDateTime: fileDateTime,
       printDateTime: printDateTime,
       fileName: map['fileName'] ?? '',
@@ -185,4 +194,3 @@ class PrintFile {
     );
   }
 }
-

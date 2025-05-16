@@ -53,6 +53,7 @@ class _FinishDialogState extends State<FinishDialog> {
       productsToSave[productCode] = productAmount;
     });
     final newFinish = Finished(
+      id: '',
       dateTime: _selectedDate,
       products: productsToSave,
     );
@@ -96,6 +97,7 @@ class _FinishDialogState extends State<FinishDialog> {
                     productProvider.deleteFinished(widget.editFinished!);
                   } else {
                     productProvider.updateFinished(Finished(
+                        id: widget.editFinished!.id,
                         dateTime: widget.editFinished!.dateTime,
                         products: productsToSave
                     ));}
@@ -137,11 +139,11 @@ class _FinishDialogState extends State<FinishDialog> {
     if (pickedTime != null && pickedTime != _selectedDate) {
       setState(() {
         _selectedDate = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime?.hour ?? _selectedDate.hour,
+          pickedTime?.minute ?? _selectedDate.minute,
         ).toUtc();
       });
     }

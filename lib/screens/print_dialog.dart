@@ -74,12 +74,13 @@ class _PrintDialogState extends State<PrintDialog> {
       productsPrintedToSave[productCode] = productAmount;
     });
     final newPrintFile = PrintFile(
-        fileDateTime: _selectedFileDate,
-        printDateTime: _selectedPrintDate ?? _selectedFileDate,
-        productOnFile: productsOnFileToSave,
-        productPrinted: productsPrintedToSave,
-        fileName: _fileNameController.text,
-        printerName: _printerNameController.text,
+      id: '',
+      fileDateTime: _selectedFileDate,
+      printDateTime: _selectedPrintDate ?? _selectedFileDate,
+      productOnFile: productsOnFileToSave,
+      productPrinted: productsPrintedToSave,
+      fileName: _fileNameController.text,
+      printerName: _printerNameController.text,
     );
     if (widget.editPrintFile == null) {
       productProvider.savePrint(newPrintFile);
@@ -121,6 +122,7 @@ class _PrintDialogState extends State<PrintDialog> {
                     productProvider.deletePrint(widget.editPrintFile!);
                   } else {
                     productProvider.updatePrint(PrintFile(
+                        id: widget.editPrintFile!.id,
                         fileDateTime: widget.editPrintFile!.fileDateTime,
                         printDateTime: widget.editPrintFile!.printDateTime,
                         productOnFile: productsOnFileToSave,
@@ -161,6 +163,17 @@ class _PrintDialogState extends State<PrintDialog> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(_selectedFileDate),
     );
+    if (pickedTime != null && pickedTime != _selectedFileDate) {
+      setState(() {
+        _selectedFileDate = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime?.hour ?? _selectedFileDate.hour,
+          pickedTime?.minute ?? _selectedFileDate.minute,
+        );
+      });
+    }
   }
 
   Future<void> _selectPrintDate(BuildContext context) async {

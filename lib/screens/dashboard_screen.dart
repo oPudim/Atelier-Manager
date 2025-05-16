@@ -14,7 +14,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 4;
+  int _selectedIndex = 0;
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
@@ -74,10 +74,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
       ),
-      //floatingActionButton: FloatingActionButton( //Comente aqui para testar
-      //  onPressed: () {}, //Comente aqui para testar
-      //  child: const Icon(Icons.add), //Comente aqui para testar
-      //), //Comente aqui para testar
     );
   }
 }
