@@ -167,7 +167,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      '${(product.scale * 100).toStringAsFixed(1)}%',
+                      '${(product.scale).toStringAsFixed(product.scale.truncateToDouble() == product.scale ? 0 : 1).replaceAll('.', ',')}%',
                       style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black26

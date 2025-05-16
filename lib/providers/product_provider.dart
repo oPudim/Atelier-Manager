@@ -174,6 +174,19 @@ class ProductProvider with ChangeNotifier {
         .delete();
   }
 
+  void markAsPrinted(PrintFile printFile, Map<String, int> productPrinted) {
+    final updatedPrintFile = PrintFile(
+      id: printFile.id,
+      fileDateTime: printFile.fileDateTime,
+      printDateTime: DateTime.now(),
+      fileName: printFile.fileName,
+      printerName: printFile.printerName,
+      productOnFile: printFile.productOnFile,
+      productPrinted: productPrinted,
+    );
+    updatePrint(updatedPrintFile);
+  }
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //Events functions
 

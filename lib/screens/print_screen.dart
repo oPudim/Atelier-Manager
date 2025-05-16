@@ -21,6 +21,13 @@ class _PrintsScreenState extends State<PrintsScreen> {
     super.initState();
   }
 
+  void _showEditFinishDialog(BuildContext context, PrintFile printFile) {
+    Navigator.of(context).push(PageRouteBuilder(
+        opaque: true,
+        fullscreenDialog: true,
+        pageBuilder: (context, _, __) => PrintDialog(editPrintFile: printFile)));
+  }
+
   Widget finishCard (ProductProvider productProvider, PrintFile _printFile) {
     return Container(
       margin: const EdgeInsets.only(
@@ -273,7 +280,113 @@ class _PrintsScreenState extends State<PrintsScreen> {
           return ListView.separated(
             separatorBuilder: (context, index) => const Divider(height: 0.0),
             itemCount: filteredFiles.length,
-            itemBuilder: (context, index) => finishCard(productProvider, filteredFiles[index]),
+            itemBuilder: (context, index) => InkWell(
+              child: finishCard(productProvider, filteredFiles[index]),
+              onLongPress: () {
+                  showModalBottomSheet(
+                      context: context,
+                      builder: (context) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            finishCard(productProvider, filteredFiles[index]),
+                            Divider(height: 0, color: Colors.black12),
+                            ListTile(
+                              leading: const Icon(Icons.print),
+                              title: const Text('Imprimir'),
+                              onTap: () async {
+                                Navigator.of(context).pop(); // Close the bottom sheet
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MarkAsPrintedDialog(
+                                      printFile: filteredFiles[index],
+                                      productProvider: productProvider,
+                                    ),
+                                  ),
+                                );
+
+                                if (result != null) {
+                                  productProvider.markAsPrinted(filteredFiles[index], result);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Impressão marcada como concluída.'),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.edit),
+                              title: const Text('Editar'),
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                _showEditFinishDialog(context, filteredFiles[index]);
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.copy),
+                              title: const Text('Duplicar'),
+                              onLongPress: () {
+                                Navigator.of(context).pop();
+                                final dataTime = DateTime.now();
+                                productProvider.savePrint(
+                                    PrintFile(
+                                      id: '',
+                                      fileName: filteredFiles[index].fileName,
+                                      printerName: filteredFiles[index].printerName,
+                                      productOnFile: Map.from(filteredFiles[index].productOnFile),
+                                      fileDateTime: dataTime,
+                                      printDateTime: dataTime,
+                                      productPrinted: {}
+                                    )
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Impressão duplicada.'),
+                                  ),
+                                );
+                              }
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.delete),
+                              title: const Text('Excluir'),
+                              onLongPress: () {
+                                showDialog(
+                                  context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text('Excluir impressão?'),
+                                        content: const Text('Essa ação não poderá ser desfeita.'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: const Text('Cancelar'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              productProvider.deletePrint(filteredFiles[index]);
+                                              Navigator.of(context).pop();
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('Impressão excluída.'),
+                                                ),
+                                              );
+                                            },
+                                            child: const Text('Excluir'),
+                                          ),
+                                        ]
+                                      );
+                                    },
+                                );
+                              },
+                            ),
+                          ]
+                        );
+                      }
+                      );
+              },
+            ),
           );
         },
       ),
@@ -371,4 +484,181 @@ class _PrintsScreenState extends State<PrintsScreen> {
     );
   }
 
+}
+
+class MarkAsPrintedDialog extends StatefulWidget {
+  final PrintFile printFile;
+  final ProductProvider productProvider;
+
+  const MarkAsPrintedDialog({Key? key, required this.printFile, required this.productProvider}) : super(key: key);
+
+  @override
+  _MarkAsPrintedDialogState createState() => _MarkAsPrintedDialogState();
+}
+
+class _MarkAsPrintedDialogState extends State<MarkAsPrintedDialog> {
+  Map<String, int>? _productPrinted;
+
+  @override
+  void initState() {
+    _productPrinted = widget.printFile.isPrinted ? Map.from(widget.printFile.productPrinted) : Map.from(widget.printFile.productOnFile);
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Impressos'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Confirmar'),
+            onPressed: () => Navigator.of(context).pop(_productPrinted),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView( // Added SingleChildScrollView
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Added to make column take minimum space
+          children: [
+            Text(widget.printFile.fileName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            ListView.separated(
+              separatorBuilder: (context, index) => const Divider(height: 0.0),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _productPrinted!.length,
+              itemBuilder: (context, index) {
+                final product = widget.printFile.productOnFile.entries.elementAt(index);
+                final productData = widget.productProvider.findByCode(product.key);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 50,
+                        width: 50,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child: Image.network(
+                            productData.imageUrl,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+                              return ColoredBox(
+                                color: Colors.black12,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+                              return const ColoredBox(
+                                color: Colors.black12,
+                                child: Center(child: Icon(Icons.error, color: Colors.black38)),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        flex: 2,
+                        fit: FlexFit.tight,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                productData.name,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold
+                                )
+                            ),
+                            Text(
+                                productData.studio,
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.black45
+                                )
+                            ),
+                            Text(
+                                productData.code,
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.black45
+                                )
+                            ),
+                          ],
+                        ),
+                      ),
+                      Flexible(
+                        flex: 1,
+                        fit: FlexFit.tight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                                product.value.toString(),
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold
+                                )
+                            ),
+                            Icon(Icons.arrow_right, color: Colors.black26),
+                          ],
+                        ),
+                      ),
+                      Flexible(
+                        flex: 2,
+                        fit: FlexFit.tight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed: () {
+                                setState(() {
+                                  if (_productPrinted![product.key]! > 0)
+                                    _productPrinted![product.key] = _productPrinted![product.key]! - 1;
+                                });
+                              },
+                            ),
+                            Text(
+                                _productPrinted![product.key].toString(),
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold
+                                )
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () {
+                                setState(() {
+                                  if (widget.printFile.productOnFile[product.key]! > _productPrinted![product.key]!)
+                                    _productPrinted![product.key] = _productPrinted![product.key]! + 1;
+                                });
+                              },
+                            ),
+                          ]
+                        )
+                      )
+                    ],
+                  ),
+                );
+              }
+            )
+          ],
+        ),
+      ),
+    );
+  }
 }

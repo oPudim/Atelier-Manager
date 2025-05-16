@@ -76,13 +76,40 @@ class _OutFlowScreenState extends State<OutFlowScreen> {
               OutFlow outFlow = outFlows[index];
 
               return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OutFlowDialog(editOutFlow: outFlow),
-                      fullscreenDialog: true,
-                    ),
+                onLongPress: () {
+                  showModalBottomSheet(
+                      context: context,
+                      builder: (context) {
+                        return Container(
+                          height: 150,
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.edit),
+                                title: const Text('Editar'),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OutFlowDialog(editOutFlow: outFlow),
+                                      fullscreenDialog: true,
+                                    ),
+                                  );
+                                },
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.delete),
+                                title: const Text('Excluir'),
+                                onTap: () {
+                                  productProvider.deleteOutFlow(outFlow);
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                   );
                 },
                 child: OutFlowCard(productProvider, outFlow),
