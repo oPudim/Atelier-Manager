@@ -1,3 +1,4 @@
+import 'package:atelier_manager/screens/customer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:atelier_manager/providers/product_provider.dart';
 import 'package:atelier_manager/models/product_data.dart';
@@ -26,11 +27,13 @@ class MainDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.error),
-            title: const Text('Perdas'),
+            leading: const Icon(Icons.person),
+            title: const Text('Clientes'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/losses');
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return const CustomerScreen();
+              }));
             },
           ),
           ListTile(
@@ -46,7 +49,9 @@ class MainDrawer extends StatelessWidget {
             title: const Text('Ferramentas'),
             onTap: () {
               Navigator.pop(context); // Fecha o drawer
-              _showFullScreenToolsDialog(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return const FullScreenToolsDialog();
+              }));
             },
           ),
         ],

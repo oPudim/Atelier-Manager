@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:atelier_manager/models/product_data.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +27,7 @@ class _PrintDialogState extends State<PrintDialog> {
   late TextEditingController _printerNameController;
   String _fileName = '';
   String _printerName = '';
+  bool _orderLimit = true;
 
   bool? isDataChanged = false;
 
@@ -37,6 +40,8 @@ class _PrintDialogState extends State<PrintDialog> {
       _printedProducts = widget.editPrintFile!.productPrinted.map((key, value) => MapEntry(key, value));
       _selectedFileDate = widget.editPrintFile!.fileDateTime;
       _selectedPrintDate = widget.editPrintFile!.printDateTime;
+      _fileName = widget.editPrintFile!.fileName;
+      _printerName = widget.editPrintFile!.printerName;
     }
     _fileNameController = TextEditingController(text: _fileName);
     _printerNameController = TextEditingController(text: _printerName);
@@ -201,7 +206,7 @@ class _PrintDialogState extends State<PrintDialog> {
   void _buildSuggestions() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Permite que o modal ocupe mais espaço (útil para a lista)
+      isScrollControlled: true,
       builder: (context) {
         return SizedBox(
           height: 500,
@@ -209,6 +214,7 @@ class _PrintDialogState extends State<PrintDialog> {
             productProvider: productProvider,
             editPrintFile: widget.editPrintFile,
             onFileProducts: _onFileProducts, // Passa os produtos já adicionados
+            orderLimit: _orderLimit,
             onProductSelected: (product) { // Callback para lidar com a seleção de produto
               setState(() { // Atualiza o estado do _PrintDialogState
                 if (_onFileProducts.containsKey(product.code)) {
@@ -235,6 +241,35 @@ class _PrintDialogState extends State<PrintDialog> {
       appBar: AppBar(
         title: Text('${widget.editPrintFile == null ? 'Novo' : 'Editar'} arquivo'),
         actions: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                  'Limite de\nordem',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.0,
+                    color: Colors.black54,
+                  )
+              ),
+              const SizedBox(width: 5.0),
+              Switch(
+                trackOutlineColor: WidgetStateProperty
+                    .resolveWith<Color?>((_) => Colors.transparent),
+                activeColor: Colors.black12,
+                activeTrackColor: Colors.black45,
+                inactiveThumbColor: Colors.black45,
+                inactiveTrackColor: Colors.black12,
+                value: _orderLimit,
+                onChanged: (bool value) {
+                  setState(() {
+                    _orderLimit = value;
+                  });
+                },
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _finalizePrint,
@@ -280,7 +315,6 @@ class _PrintDialogState extends State<PrintDialog> {
                       return DropdownMenuEntry(value: printerName, label: printerName);
                     }).toList(),
                     controller: _printerNameController,
-                    //expandedInsets: EdgeInsets.zero,
                     enableFilter: true,
                     requestFocusOnTap: true,
                     label: Text('Impressora'),
@@ -354,6 +388,7 @@ class _PrintDialogState extends State<PrintDialog> {
                             ? widget.editPrintFile!.productOnFile[product.code]!
                             : 0);
                     final isMaxAmount = _onFileProducts[product.code]! < maxAvalilable;
+                    final isOverLimit = _onFileProducts[product.code]! > maxAvalilable;
 
                     return ListTile(
                       leading: product.imageUrl != null && product.imageUrl.isNotEmpty
@@ -422,8 +457,9 @@ class _PrintDialogState extends State<PrintDialog> {
                                   children: [
                                     Text(
                                         amount.toString(),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.bold,
+                                          color: isOverLimit && _orderLimit ? Colors.red : Colors.black,
                                           fontSize: 15,
                                         )
                                     ),
@@ -446,7 +482,7 @@ class _PrintDialogState extends State<PrintDialog> {
                                         : _onFileProducts[product.code] = maxAvalilable;
                                   });
                                 },
-                                onPressed: isMaxAmount ? () {
+                                onPressed: isMaxAmount || !_orderLimit ? () {
                                   setState(() {
                                     if (_onFileProducts.containsKey(product.code))
                                       _onFileProducts[product.code] = _onFileProducts[product.code]! + 1;
@@ -474,6 +510,7 @@ class ProductSearchModal extends StatefulWidget {
   final PrintFile? editPrintFile;
   final Map<String, int> onFileProducts; // Passar a lista de produtos já adicionados
   final void Function(Product product) onProductSelected; // Callback para quando um produto é selecionado
+  final bool orderLimit;
 
   const ProductSearchModal({
     Key? key,
@@ -481,6 +518,7 @@ class ProductSearchModal extends StatefulWidget {
     this.editPrintFile,
     required this.onFileProducts,
     required this.onProductSelected,
+    required this.orderLimit,
   }) : super(key: key);
 
   @override
@@ -522,10 +560,10 @@ class _ProductSearchModalState extends State<ProductSearchModal> {
               widget.editPrintFile!.productOnFile.containsKey(product.code))
               ? widget.editPrintFile!.productOnFile[product.code]!
               : 0);
-      bool isAvailable = product.order > 0 &&
+      bool isAvailable = widget.orderLimit ? (product.order > 0 &&
           (widget.onFileProducts.containsKey(product.code)
               ? widget.onFileProducts[product.code]! < maxAvalilable
-              : true);
+              : true)) : true;
 
       if (_searchText.isNotEmpty) {
         final lowerCaseSearchText = _searchText.toLowerCase();
@@ -591,8 +629,7 @@ class _ProductSearchModalState extends State<ProductSearchModal> {
                         : 0);
                 final available = '${widget.onFileProducts.containsKey(
                     product.code) ? '${maxAvalilable -
-                    (widget.onFileProducts[product.code] ?? 0)}/' : ''}'
-                    '${maxAvalilable} unidade${maxAvalilable > 1 ? 's' : ''}';
+                    (widget.onFileProducts[product.code] ?? 0)}/' : ''}${maxAvalilable}';
                 final subtitle = '${product.code} - ${product.type} (${product
                     .studio})';
 
@@ -621,10 +658,32 @@ class _ProductSearchModalState extends State<ProductSearchModal> {
                     subtitle: Text(
                         subtitle,
                         style: const TextStyle(
-                            fontSize: 10,
+                            fontSize: 9,
                             color: Colors.black54)
                     ),
-                    trailing: Text(available),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                            available,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black,
+                              fontWeight: FontWeight.bold,
+
+                            ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                            'unidade${maxAvalilable > 1 ? 's' : ''}\n em ordem',
+                            style: const TextStyle(
+                                fontSize: 9,
+                                color: Colors.black38
+                            ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },

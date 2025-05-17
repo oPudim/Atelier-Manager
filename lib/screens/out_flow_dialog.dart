@@ -369,6 +369,7 @@ class _OutFlowDialogState extends State<OutFlowDialog> {
                     enableFilter: true,
                     requestFocusOnTap: true,
                     label: Text('Tipo de saída'),
+                    initialSelection: _selectedType,
                     inputDecorationTheme: const InputDecorationTheme(
                       filled: false,
                       contentPadding: EdgeInsets.symmetric(vertical: 5.0),
@@ -382,7 +383,6 @@ class _OutFlowDialogState extends State<OutFlowDialog> {
                   ),
                 ),
                 if (_selectedType != null) const SizedBox(width: 10),
-                if (_selectedType == 'event' || _selectedType == 'loss')
                   Flexible(
                     flex: 1,
                     fit: FlexFit.tight,
@@ -396,58 +396,86 @@ class _OutFlowDialogState extends State<OutFlowDialog> {
                                       '${events.name}\n${DateFormat('dd/MM/yyyy').format(events.startDate)} a ${DateFormat('dd/MM/yyyy').format(events.endDate)}',
                                 );
                               }).toList()
-                              : LossStage.values.map((stage) {
+                              : _selectedType == 'loss'
+                              ? LossStage.values.map((stage) {
                                 return DropdownMenuEntry(
                                   value: stage.toShortString(),
                                   label: stage.label(),
                                 );
-                              }).toList(),
+                              }).toList() : _selectedType == 'order'
+                              ? productProvider.customers.map((customer) {
+                                return DropdownMenuEntry(
+                                  value: customer.id,
+                                  label: customer.name,
+                                );
+                              }).toList()
+                              : _selectedType == 'gift'
+                              ? productProvider.customers.map((customer) {
+                                return DropdownMenuEntry(
+                                  value: customer.id,
+                                  label: customer.name,
+                                );
+                              }).toList()
+                          : _selectedType == 'barter'
+                              ? productProvider.customers.map((customers) {
+                                return DropdownMenuEntry(
+                                  value: customers.id,
+                                  label: customers.name,
+                                );
+                          }).toList() : [],
                       enableFilter: true,
                       requestFocusOnTap: true,
                       label: Text(
-                        _selectedType == 'event' ? 'Evento' : 'Etapa'
+                        _selectedType == 'event'
+                            ? 'Evento'
+                            : _selectedType == 'loss'
+                            ? 'Etapa'
+                            : _selectedType == 'order'
+                            ? 'Cliente'
+                            : _selectedType == 'gift'
+                            ? 'Destinatário'
+                            : _selectedType == 'barter'
+                            ? 'Parceiro'
+                            : '',
                       ),
+                      initialSelection: _selectedType == 'event'
+                          ? (widget.editOutFlow != null ? _dataOutFlow['eventId'].toString() : '')
+                          : _selectedType == 'loss'
+                          ? (widget.editOutFlow != null ? ((_dataOutFlow['stage']) as LossStage).toShortString() : '')
+                          : _selectedType == 'order'
+                          ? (widget.editOutFlow != null ? _dataOutFlow['customerId'].toString() : '')
+                          : _selectedType == 'gift'
+                          ? (widget.editOutFlow != null ? _dataOutFlow['recipientId'].toString() : '')
+                          : _selectedType == 'barter'
+                          ? (widget.editOutFlow != null ? _dataOutFlow['partner'].toString() : '')
+                          : '',
                       inputDecorationTheme: const InputDecorationTheme(
                         filled: false,
                         contentPadding: EdgeInsets.symmetric(vertical: 5.0),
                       ),
                       onSelected: (String? value) {
                         setState(() {
-                          if (_selectedType == 'event') {
-                            _dataOutFlow['eventId'] = value as String;
-                          } else {
-                            _dataOutFlow['stage'] = value as String;
+                          switch (_selectedType) {
+                            case 'event':
+                              _dataOutFlow['eventId'] = value as String;
+                              break;
+                            case 'loss':
+                              _dataOutFlow['stage'] = value as String;
+                              break;
+                            case 'order':
+                              _dataOutFlow['customerId'] = value as String;
+                              break;
+                            case 'gift':
+                              _dataOutFlow['recipientId'] = value as String;
+                              break;
+                            case 'barter':
+                              _dataOutFlow['partner'] = value as String;
+                              break;
                           }
                         });
                       },
                     ),
                   ),
-                if (_selectedType == 'order' || _selectedType == 'gift' || _selectedType == 'barter')
-                  Flexible(
-                    flex: 1,
-                    fit: FlexFit.tight,
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        labelText: _selectedType == 'order' ? 'Cliente' : _selectedType == 'gift' ? 'Destinatário' : 'Parceiro',
-                        border: UnderlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          switch (_selectedType) {
-                            case 'order':
-                              _dataOutFlow['customerId'] = value;
-                              break;
-                            case 'gift':
-                              _dataOutFlow['recipientId'] = value;
-                              break;
-                            case 'barter':
-                              _dataOutFlow['partner'] = value;
-                              break;
-                          }
-                        });
-                      }
-                    ),
-                  )
               ],
             ),
             if (_selectedType == 'loss' || _selectedType == 'gift')

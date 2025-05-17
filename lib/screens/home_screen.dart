@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:atelier_manager/widgets/main_drawer.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
-import 'package:atelier_manager/models/product_data.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -39,21 +38,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       0, (value, product) => value + product.numFinisheds)}'),
                   Text('Produtos vendidos: ${productProvider.products.fold(
                       0, (value, product) => value + product.numSales)}'),
-                  Text('Ganhos totais: R\$ ${productProvider.products
-                      .fold(
-                      0.0, (value, product) => value + product.earnings)
-                      .toStringAsFixed(2)
-                      .replaceAll('.', ',')}'),
-                  Text('Ganhos este mês: R\$ ${productProvider.products
-                      .fold(
-                      0.0, (value, product) => value + product.earningsThisMonth)
-                      .toStringAsFixed(2)
-                      .replaceAll('.', ',')}'),
-                  Text('Ganhos este ano: R\$ ${productProvider.products
-                      .fold(
-                      0.0, (value, product) => value + product.earningsThisYear)
-                      .toStringAsFixed(2)
-                      .replaceAll('.', ',')}'),
+                  // Text('Ganhos totais: R\$ ${productProvider.products
+                  //     .fold(
+                  //     0.0, (value, product) => value + product.earnings)
+                  //     .toStringAsFixed(2)
+                  //     .replaceAll('.', ',')}'),
+                  // Text('Ganhos este mês: R\$ ${productProvider.products
+                  //     .fold(
+                  //     0.0, (value, product) => value + product.earningsThisMonth)
+                  //     .toStringAsFixed(2)
+                  //     .replaceAll('.', ',')}'),
+                  // Text('Ganhos este ano: R\$ ${productProvider.products
+                  //     .fold(
+                  //     0.0, (value, product) => value + product.earningsThisYear)
+                  //     .toStringAsFixed(2)
+                  //     .replaceAll('.', ',')}'),
                 ],
               ),
             );

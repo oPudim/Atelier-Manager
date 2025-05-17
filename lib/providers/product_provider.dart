@@ -269,6 +269,47 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //Customers functions
+
+  Future<void> saveCustomer(Customer customer) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('customers')
+          .add(customer.toMap());
+      print('Cliente salvo com sucesso: ${customer.name}');
+    } catch (e) {
+      print('Erro ao salvar cliente: $e');
+      throw e;
+    }
+  }
+
+  Future<void> updateCustomer(Customer customer) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('customers')
+          .doc(customer.id)
+          .update(customer.toMap());
+      print('Cliente atualizado com sucesso: ${customer.name}');
+    } catch (e) {
+      print('Erro ao atualizar cliente: $e');
+      throw e;
+    }
+  }
+
+  Future<void> deleteCustomer(Customer customer) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('customers')
+          .doc(customer.id)
+          .delete();
+      print('Cliente excluído com sucesso: ${customer.name}');
+    } catch (e) {
+      print('Erro ao excluir cliente: $e');
+      throw e;
+    }
+  }
+
   Future<int> addPrints(List<PrintFile> _printFiles,
       {required Function(double) onProgress}) async {
     final totalPrintFiles = _printFiles.length;

@@ -18,7 +18,6 @@ class _EventsScreenState extends State<EventsScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  // Função para navegar para a tela de criação/edição de evento
   Future<void> _navigateToEventDialog({Event? event}) async {
     await Navigator.push(
       context,

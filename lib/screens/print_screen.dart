@@ -38,12 +38,35 @@ class _PrintsScreenState extends State<PrintsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-              _printFile.fileName,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold
-              )
+          Row(
+            children: [
+              Text(_printFile.fileName,
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold
+                  ),
+              ),
+              const Spacer(),
+              Container(
+                height: 20,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: _printFile.isPrinted ? Colors.green : Colors.orangeAccent,
+                ),
+                child: Center(
+                  child: Text(
+                      _printFile.isPrinted ? 'Impressa' : 'Em espera',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white70
+                      )
+                  ),
+                ),
+              ),
+            ],
           ),
           Text(
               _printFile.printerName,

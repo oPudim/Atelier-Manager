@@ -6,7 +6,6 @@ import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'providers/product_provider.dart';
-import 'screens/setting_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -51,9 +50,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: const AuthCheck(),
-      routes: {
-        '/settings': (context) => const SettingScreen(),
-      },
     );
   }
 }
